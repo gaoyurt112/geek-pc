@@ -96,7 +96,6 @@ const Publish = () => {
                   {item.name}
                 </Option>
               ))}
-              <Option value={0}>推荐</Option>
             </Select>
           </Form.Item>
 
