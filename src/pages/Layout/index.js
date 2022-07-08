@@ -20,6 +20,7 @@ const GeekLayout = () => {
   const { userStore, loginStore } = useStore()
 
   useEffect(() => {
+    //获取用户信息请求
     try {
       userStore.getUserInfo()
     } catch (error) {
@@ -27,6 +28,7 @@ const GeekLayout = () => {
     }
   }, [userStore])
 
+  //退出登录的方法
   const onlogOut = () => {
     loginStore.loginOut()
     navigate('/login')

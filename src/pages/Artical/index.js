@@ -5,16 +5,85 @@ import 'moment/locale/zh-cn'
 import locale from 'antd/es/date-picker/locale/zh_CN'
 import './index.scss'
 import img404 from '@/assets/error.png'
+import { useEffect, useState } from 'react'
+import { http } from '@/utils'
+import { values } from 'mobx'
 
 const { Option } = Select
 const { RangePicker } = DatePicker
 
 
 const Article = () => {
-  //提交表单
-  const onFinish = (values) => {
-    console.log(values)
+  //频道列表数据管理
+  const [channel, setChannels] = useState([])
+  // console.log(channel);
+
+  //文章列表数据管理
+  const [artical, setArticalList] = useState({
+    list: [],
+    count: 0
+  })
+  console.log(artical.list)
+
+  //参数管理
+  const [params, setParams] = useState({
+    page: 1,
+    per_page: 10
+  })
+
+  //页面渲染时获取频道数据
+  useEffect(() => {
+    async function getChannels () {
+      const res = await http.get('/channels')
+      setChannels(res.data.channels)
+    }
+    getChannels()
+  }, [])
+
+  //发送获取列表请求
+  useEffect(() => {
+    async function getArticalList () {
+      const res = await http.get('/mp/articles', { params })
+      // console.log(res)
+      setArticalList({
+        list: res.data.results,
+        count: res.data.total_count
+      })
+    }
+    getArticalList()
+  }, [params])
+
+  //筛选功能调教表单
+  const onSearch = values => {
+    const { status, channel_id, date } = values
+    //格式化表单数据
+    const _params = {}
+    //格式化status
+    _params.status = status
+    if (channel_id) {
+      _params.channel_id = channel_id
+    }
+    if (date) {
+      _params.begin_pubdate = date[0].format('YYYY-MM-DD')
+      _params.end_pubdate = date[1].format('YYYY-MM-DD')
+    }
+    // 修改params参数 触发接口再次发起
+    setParams({
+      ...params,
+      ..._params
+    })
   }
+
+
+  //分页功能实现
+  const pageChange = (page) => {
+    // 拿到当前页参数 修改params 引起接口更新
+    setParams({
+      ...params,
+      page
+    })
+  }
+
 
   //列表区域列
   const columns = [
@@ -70,23 +139,6 @@ const Article = () => {
     }
   ]
 
-  const data = [
-    {
-      id: '8218',
-      comment_count: 0,
-      cover: {
-        images: ['http://geek.itheima.net/resources/images/15.jpg'],
-      },
-      like_count: 0,
-      pubdate: '2019-03-11 09:00:00',
-      read_count: 2,
-      status: 2,
-      title: 'wkwebview离线化加载h5资源解决方案'
-    }
-  ]
-
-
-
   return (
     <div>
       {/* 筛选区域结构 */}
@@ -103,8 +155,8 @@ const Article = () => {
       >
         {/* https://blog.csdn.net/qq_43690438/article/details/110523203 解决下拉框默认值报错问题*/}
         <Form
-          onFinish={onFinish}
-          initialValues={{ status: -1, channel_id: 'lucy' }}>
+          onFinish={onSearch}
+          initialValues={{ status: -1, channel_id: '选择频道' }}>
           <Form.Item label="状态" name="status">
             <Radio.Group>
               <Radio value={-1}>全部</Radio>
@@ -120,8 +172,8 @@ const Article = () => {
               placeholder="请选择文章频道"
               style={{ width: 120 }}
             >
-              <Option value="jack">Jack</Option>
-              <Option value="lucy">Lucy</Option>
+              {/* 遍历频道数据添加下拉选项 */}
+              {channel.map(item => (<Option key={item.id} value={item.id}>{item.name}</Option>))}
             </Select>
           </Form.Item>
 
@@ -138,8 +190,13 @@ const Article = () => {
         </Form>
       </Card>
       {/* 表格区域结构 */}
-      <Card title={`根据筛选条件共查询到 count 条结果：`}>
-        <Table rowKey="id" columns={columns} dataSource={data} />
+      <Card title={`根据筛选条件共查询到 ${artical.count} 条结果：`}>
+        <Table rowKey="id" columns={columns} dataSource={artical.list} pagination={{
+          position: ['bottomCenter'],
+          current: params.page,
+          pageSize: params.per_page,
+          onChange: pageChange
+        }} />
       </Card>
     </div>
   )
