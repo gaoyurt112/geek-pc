@@ -60,6 +60,7 @@ const Publish = () => {
     fetchChannels()
   }, [])
 
+
   return (
     <div className="publish">
       <Card
@@ -95,6 +96,7 @@ const Publish = () => {
                   {item.name}
                 </Option>
               ))}
+              <Option value={0}>推荐</Option>
             </Select>
           </Form.Item>
 
@@ -135,7 +137,6 @@ const Publish = () => {
               placeholder="请输入文章内容"
             />
           </Form.Item>
-
           <Form.Item wrapperCol={{ offset: 4 }}>
             <Space>
               <Button size="large" type="primary" htmlType="submit">
