@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Card, Breadcrumb, Form, Button, Radio, DatePicker, Select, Table, Tag, Space } from 'antd'
+import { Card, Breadcrumb, Form, Button, Radio, DatePicker, Select, Table, Tag, Space, Popconfirm } from 'antd'
 import { EditOutlined, DeleteOutlined } from '@ant-design/icons'
 import 'moment/locale/zh-cn'
 import locale from 'antd/es/date-picker/locale/zh_CN'
@@ -7,7 +7,7 @@ import './index.scss'
 import img404 from '@/assets/error.png'
 import { useEffect, useState } from 'react'
 import { http } from '@/utils'
-import { values } from 'mobx'
+import { history } from '@/utils/history'
 
 const { Option } = Select
 const { RangePicker } = DatePicker
@@ -69,6 +69,7 @@ const Article = () => {
     }
     // 修改params参数 触发接口再次发起
     setParams({
+      // 扩展运算符将对象中的所有属性遍历出来并将属性放入当前对象中
       ...params,
       ..._params
     })
@@ -79,8 +80,20 @@ const Article = () => {
   const pageChange = (page) => {
     // 拿到当前页参数 修改params 引起接口更新
     setParams({
+      //解构params
       ...params,
+      //修改page
       page
+    })
+  }
+
+  //删除功能实现
+  const delArticle = async (data) => {
+    await http.delete(`/mp/articles/${data.id}`)
+    // 更新列表
+    setParams({
+      page: 1,
+      per_page: 10
     })
   }
 
@@ -126,13 +139,21 @@ const Article = () => {
       render: data => {
         return (
           <Space size="middle">
-            <Button type="primary" shape="circle" icon={<EditOutlined />} />
-            <Button
-              type="primary"
-              danger
-              shape="circle"
-              icon={<DeleteOutlined />}
-            />
+            <Button type="primary" shape="circle" icon={<EditOutlined />} onClick={() => history.push(`/home/publish?id=${data.id}`)} />
+            <Popconfirm
+              title="确认删除该条文章吗?"
+              onConfirm={() => delArticle(data)}
+              okText="确认"
+              cancelText="取消"
+            >
+              <Button
+                type="primary"
+                danger
+                shape="circle"
+                icon={<DeleteOutlined />}
+              />
+            </Popconfirm>
+
           </Space>
         )
       }
@@ -191,12 +212,14 @@ const Article = () => {
       </Card>
       {/* 表格区域结构 */}
       <Card title={`根据筛选条件共查询到 ${artical.count} 条结果：`}>
-        <Table rowKey="id" columns={columns} dataSource={artical.list} pagination={{
-          position: ['bottomCenter'],
-          current: params.page,
-          pageSize: params.per_page,
-          onChange: pageChange
-        }} />
+        <Table rowKey="id" columns={columns} dataSource={artical.list}
+          pagination={{
+            position: ['bottomCenter'],
+            current: params.page,
+            pageSize: params.per_page,
+            total: artical.count,
+            onChange: pageChange
+          }} />
       </Card>
     </div>
   )
